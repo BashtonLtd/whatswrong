@@ -112,10 +112,19 @@ nfs_timeout() {
   fi
 }
 
-### Global checks
+### Global and kernel checks
 recently_rebooted() {
   output "Server has been running more than 30 minutes"
   if [ $(cat /proc/uptime | sed -e 's/\..*//') -lt 1800 ]; then
+    bad
+  else
+    ok
+  fi
+}
+
+hung_task() {
+  output "No hung tasks"
+  if dmesg | grep -q "hung_task_timeout_secs"; then
     bad
   else
     ok
@@ -174,6 +183,7 @@ mysql_check() {
 
 echo "### Global checks"
 recently_rebooted
+hung_task
 echo "### VM checks"
 oom_hit
 high_swap
