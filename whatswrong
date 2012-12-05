@@ -138,6 +138,18 @@ hung_task() {
   fi
 }
 
+conntrack_full() {
+  # Don't check if connection tracking module isn't loaded
+  if egrep -q "nf_conntrack " /proc/modules; then
+    output "Connection tracking table OK"
+    if dmesg | grep -q "nf_conntrack: table full"; then
+      bad
+    else
+      ok
+    fi
+  fi
+}
+
 ### Process checks
 
 # Process checks should only report a problem if a service is
@@ -190,6 +202,7 @@ mysql_check() {
 
 echo "### Global checks"
 recently_rebooted
+conntrack_full
 hung_task
 echo "### VM checks"
 oom_hit
