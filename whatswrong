@@ -102,6 +102,16 @@ nfs_timeout() {
   fi
 }
 
+### Miscellaneous checks
+recently_rebooted() {
+  output "Server has been running more than 30 minutes"
+  if [ $(cat /proc/uptime | sed -e 's/\..*//') -lt 1800 ]; then
+    bad
+  else
+    ok
+  fi
+}
+
 echo "### VM checks"
 oom_hit
 high_swap
@@ -110,3 +120,5 @@ remounted_ro
 disk_full
 inode_full
 nfs_timeout
+echo "### Miscellaneous checks"
+recently_rebooted
