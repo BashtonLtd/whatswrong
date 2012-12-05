@@ -45,6 +45,15 @@ percentage() {
 
 ### Disk checks
 
+uncorrectable_drive_error() {
+  output "No uncorrectable drive errors"
+  if dmesg | grep -q 'UncorrectableError'; then
+    bad
+  else
+    ok
+  fi
+}
+
 disk_full() {
   output "All volumes have free space"
   if df | awk '{print $5}' | egrep -q '(100|99)%'; then
@@ -71,6 +80,7 @@ remounted_ro() {
     ok
   fi
 }
+
 
 ### VM checks
 oom_hit() {
@@ -116,6 +126,7 @@ echo "### VM checks"
 oom_hit
 high_swap
 echo "### FS checks"
+uncorrectable_drive_error
 remounted_ro
 disk_full
 inode_full
