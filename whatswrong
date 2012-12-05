@@ -1,0 +1,89 @@
+#!/bin/bash
+
+COLOUR=1
+
+### Generic functions
+output() {
+  OUTPUT="$1"
+}
+
+ok() {
+  if [ $COLOUR -eq 1 ]; then
+    echo -e "\033[32m✓ \033[00m $OUTPUT"
+  else
+    echo "OK: $OUTPUT"
+  fi
+  unset OUTPUT
+}
+
+bad() {
+  if [ $COLOUR -eq 1 ]; then
+    echo -e "\033[31m✘  \033[00m $OUTPUT"
+  else
+    echo "ERROR: $OUTPUT"
+  fi
+  unset OUTPUT
+}
+
+percentage() {
+  # Given the total and the max, returns an integer percentage
+  echo "scale=2; $1 / $2 * 100" | bc | sed -e 's/\..*//'
+}
+
+### Disk checks
+
+disk_full() {
+  output "All volumes have free space"
+  if df | awk '{print $5}' | egrep -q '(100|99)%'; then
+    bad
+  else
+    ok
+  fi
+}
+
+inode_full() {
+  output "All volumes have free inodes (where applicable)"
+  if df -i | awk '{print $5}' | egrep -q '(100|99)%'; then
+    bad
+  else
+    ok
+  fi
+}
+
+remounted_ro() {
+  output "No volumes have been remounted read only"
+  if dmesg | grep -q 'Remounting filesystem read-only'; then
+    bad
+  else
+    ok
+  fi
+}
+
+### VM checks
+oom_hit() {
+  output "OOM killer has not been triggered"
+  if dmesg | grep -q 'invoked oom-killer'; then
+    bad
+  else
+    ok
+  fi
+}
+
+high_swap() {
+  output "Swap usage below 25%"
+  total=$(grep 'SwapTotal' /proc/meminfo  | awk '{print $2}')
+  used=$(grep 'SwapFree' /proc/meminfo  | awk '{print $2}')
+  if [ $(percentage $used $total) -lt 75 ]; then
+    bad
+  else
+    ok
+  fi
+}
+
+echo "### VM checks"
+oom_hit
+high_swap
+echo "### FS checks"
+remounted_ro
+disk_full
+inode_full
