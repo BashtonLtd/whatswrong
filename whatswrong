@@ -111,11 +111,13 @@ high_swap() {
 }
 
 nfs_timeout() {
-  output "No NFS timeouts"
-  if dmesg | egrep -q "nfs: server .* not responding"; then
-    bad
-  else
-    ok
+  if egrep -q '^nfs ' /proc/modules; then
+    output "No NFS timeouts"
+    if dmesg | egrep -q "nfs: server .* not responding"; then
+      bad
+    else
+      ok
+    fi
   fi
 }
 
