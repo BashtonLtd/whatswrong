@@ -56,6 +56,14 @@ uncorrectable_drive_error() {
   fi
 }
 
+buffer_io_error() {
+  if dmesg | grep -q 'Buffer I/O error on device'; then
+    bad "I/O errors in ringbuffer log"
+  else
+    ok "No I/O errors reported in ringbuffer log"
+  fi
+}
+
 disk_full() {
   if df | awk '{print $5}' | egrep -q '(100|99)%'; then
     bad "One or more volumes are full"
@@ -164,6 +172,7 @@ echo "### VM checks"
 oom_hit
 high_swap
 echo "### FS checks"
+buffer_io_error
 uncorrectable_drive_error
 remounted_ro
 disk_full
