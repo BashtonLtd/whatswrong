@@ -152,51 +152,16 @@ conntrack_full() {
 
 ### Process checks
 
-# Process checks should only report a problem if a service is
-# installed but not running
-
 check_running() {
-  if [ $(pgrep $1 | wc -l) -lt 1 ]; then
-    bad
-  else
-    ok
-  fi
-}
-
-apache_check() {
-  if [ -x /usr/sbin/apache2 ]; then
-    # Debian derived, Apache installed
-    psname=apache2
-  elif [ -x /usr/sbin/httpd ]; then
-    # RedHat style
-    psname=httpd
-  else
-    # No Apache installed
-    return
-  fi
-  output "Apache running"
-  check_running $psname
-  unset psname
-}
-
-varnish_check() {
-  if [ -x /usr/sbin/varnishd ]; then
-    output "Varnish running"
-    check_running varnishd
-  fi
-}
-
-nginx_check() {
-  if [ -x /usr/sbin/nginx ]; then
-    output "nginx running"
-    check_running nginx
-  fi
-}
-
-mysql_check() {
-  if [ -x /usr/sbin/mysqld ]; then
-    output "MySQL running"
-    check_running mysqld
+  # Arguments: process file
+  if [ -x $1 ]; then
+    pname=$(basename $1)
+    output "$pname running"
+    if [ $(pgrep $pname | wc -l) -lt 1 ]; then
+      bad
+    else
+      ok
+    fi
   fi
 }
 
@@ -214,9 +179,22 @@ disk_full
 inode_full
 nfs_timeout
 echo "### Process checks"
-apache_check
-varnish_check
-nginx_check
-mysql_check
+# Process checks should only report a problem if a service is
+# installed but not running
+
+# HTTP daemons
+check_running /usr/sbin/apache2
+check_running /usr/sbin/httpd
+check_running /usr/sbin/varnishd
+check_running /usr/sbin/nginx
+
+# Databases
+check_running /usr/sbin/mysqld
+check_running /usr/bin/mongod
+
+# Misc
+check_running /usr/sbin/asterisk
+check_running /usr/sbin/named
+check_running /usr/sbin/bind9
 
 total_bad
