@@ -93,6 +93,15 @@ high_swap() {
   fi
 }
 
+nfs_timeout() {
+  output "No NFS timeouts"
+  if dmesg | egrep -q "nfs: server .* not responding"; then
+    bad
+  else
+    ok
+  fi
+}
+
 echo "### VM checks"
 oom_hit
 high_swap
@@ -100,3 +109,4 @@ echo "### FS checks"
 remounted_ro
 disk_full
 inode_full
+nfs_timeout
