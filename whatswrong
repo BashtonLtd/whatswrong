@@ -112,7 +112,7 @@ nfs_timeout() {
   fi
 }
 
-### Miscellaneous checks
+### Global checks
 recently_rebooted() {
   output "Server has been running more than 30 minutes"
   if [ $(cat /proc/uptime | sed -e 's/\..*//') -lt 1800 ]; then
@@ -122,6 +122,58 @@ recently_rebooted() {
   fi
 }
 
+### Process checks
+
+# Process checks should only report a problem if a service is
+# installed but not running
+
+check_running() {
+  if [ $(pgrep $1 | wc -l) -lt 1 ]; then
+    bad
+  else
+    ok
+  fi
+}
+
+apache_check() {
+  if [ -x /usr/sbin/apache2 ]; then
+    # Debian derived, Apache installed
+    psname=apache2
+  elif [ -x /usr/sbin/httpd ]; then
+    # RedHat style
+    psname=httpd
+  else
+    # No Apache installed
+    return
+  fi
+  output "Apache running"
+  check_running $psname
+  unset psname
+}
+
+varnish_check() {
+  if [ -x /usr/sbin/varnishd ]; then
+    output "Varnish running"
+    check_running varnishd
+  fi
+}
+
+nginx_check() {
+  if [ -x /usr/sbin/nginx ]; then
+    output "nginx running"
+    check_running nginx
+  fi
+}
+
+mysql_check() {
+  if [ -x /usr/sbin/mysqld ]; then
+    output "MySQL running"
+    check_running mysqld
+  fi
+}
+
+echo "### Global checks"
+recently_rebooted
 echo "### VM checks"
 oom_hit
 high_swap
@@ -131,5 +183,8 @@ remounted_ro
 disk_full
 inode_full
 nfs_timeout
-echo "### Miscellaneous checks"
-recently_rebooted
+echo "### Process checks"
+apache_check
+varnish_check
+nginx_check
+mysql_check
