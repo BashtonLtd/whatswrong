@@ -17,24 +17,20 @@ COLOUR=1
 BADCOUNT=0
 
 ### Generic functions
-output() {
-  OUTPUT="$1"
-}
-
 ok() {
   if [ $COLOUR -eq 1 ]; then
-    echo -e "\033[32m✓ \033[00m $OUTPUT"
+    echo -e "\033[32m✓ \033[00m $1"
   else
-    echo "OK: $OUTPUT"
+    echo "OK: $1"
   fi
   unset OUTPUT
 }
 
 bad() {
   if [ $COLOUR -eq 1 ]; then
-    echo -e "\033[31m✘ \033[00m $OUTPUT"
+    echo -e "\033[31m✘ \033[00m $1"
   else
-    echo "ERROR: $OUTPUT"
+    echo "ERROR: $1"
   fi
   unset OUTPUT
   BADCOUNT=$(($BADCOUNT+1))
@@ -53,101 +49,91 @@ percentage() {
 ### Disk checks
 
 uncorrectable_drive_error() {
-  output "No uncorrectable drive errors"
   if dmesg | grep -q 'UncorrectableError'; then
-    bad
+    bad "Uncorrectable drive error found in dmesg log"
   else
-    ok
+    ok "No uncorrectable drive errors"
   fi
 }
 
 disk_full() {
-  output "All volumes have free space"
   if df | awk '{print $5}' | egrep -q '(100|99)%'; then
-    bad
+    bad "One or more volumes are full"
   else
-    ok
+    ok "All volumes have some free space"
   fi
 }
 
 inode_full() {
-  output "All volumes have free inodes (where applicable)"
   if df -i | awk '{print $5}' | egrep -q '(100|99)%'; then
-    bad
+    bad "One or more volumes has no available inodes"
   else
-    ok
+    ok "All volumes have inodes available"
   fi
 }
 
 remounted_ro() {
-  output "No volumes have been remounted read only"
   if dmesg | grep -q 'Remounting filesystem read-only'; then
-    bad
+    bad "Filesystem re-mounted read only"
   else
-    ok
+    ok "No filesystems re-mounted read only"
   fi
 }
 
 
 ### VM checks
 oom_hit() {
-  output "OOM killer has not been triggered"
   if dmesg | grep -q 'invoked oom-killer'; then
-    bad
+    bad "Out of memory killer has been triggered"
   else
-    ok
+    ok "No out of memory conditions found"
   fi
 }
 
 high_swap() {
-  output "Swap usage below 25%"
   total=$(grep 'SwapTotal' /proc/meminfo  | awk '{print $2}')
   used=$(grep 'SwapFree' /proc/meminfo  | awk '{print $2}')
   if [ $(percentage $used $total) -lt 75 ]; then
-    bad
+    bad "Swap usage above 25%"
   else
-    ok
+    ok "Swap usage below 25%"
   fi
 }
 
 nfs_timeout() {
   if egrep -q '^nfs ' /proc/modules; then
-    output "No NFS timeouts"
     if dmesg | egrep -q "nfs: server .* not responding"; then
-      bad
+      bad "NFS timeouts found"
     else
-      ok
+      ok "No NFS timeouts found"
     fi
   fi
 }
 
 ### Global and kernel checks
 recently_rebooted() {
-  output "Server has been running more than 30 minutes"
   if [ $(cat /proc/uptime | sed -e 's/\..*//') -lt 1800 ]; then
-    bad
+    bad "Server has been up less than 30 minutes"
   else
-    ok
+    ok "Server has been running longer than 30 minutes"
   fi
 }
 
 hung_task() {
-  output "No hung tasks"
   if dmesg | grep -q "hung_task_timeout_secs"; then
-    bad
+    bad "Evidence of hung tasks found in kernel log"
   else
-    ok
+    ok "No hung tasks logged in ringbuffer"
   fi
 }
 
 conntrack_full() {
   # Don't check if connection tracking module isn't loaded
   if egrep -q "nf_conntrack " /proc/modules; then
-    output "Connection tracking table OK"
     if dmesg | grep -q "nf_conntrack: table full"; then
-      bad
+      bad "Connection tracking table overflows found"
     else
-      ok
+      ok "No connection tracking table overflows found"
     fi
   fi
 }
@@ -158,11 +144,10 @@ check_running() {
   # Arguments: process file
   if [ -x $1 ]; then
     pname=$(basename $1)
-    output "$pname running"
     if [ $(pgrep $pname | wc -l) -lt 1 ]; then
-      bad
+      bad "$pname installed but not running"
     else
-      ok
+      ok "$pname running"
     fi
   fi
 }
