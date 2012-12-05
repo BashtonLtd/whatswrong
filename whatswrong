@@ -18,7 +18,7 @@ ok() {
 
 bad() {
   if [ $COLOUR -eq 1 ]; then
-    echo -e "\033[31m✘  \033[00m $OUTPUT"
+    echo -e "\033[31m✘ \033[00m $OUTPUT"
   else
     echo "ERROR: $OUTPUT"
   fi
