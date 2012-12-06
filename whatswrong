@@ -139,6 +139,14 @@ hung_task() {
   fi
 }
 
+soft_lockup() {
+  if dmesg | grep -q "BUG: soft lockup"; then
+    bad "CPU soft lockup logged in ringbuffer"
+  else
+    ok "No CPU soft lockups logged in ringbuffer"
+  fi
+}
+
 conntrack_full() {
   # Don't check if connection tracking module isn't loaded
   if egrep -q "nf_conntrack " /proc/modules; then
@@ -168,6 +176,7 @@ echo "### Global checks"
 recently_rebooted
 conntrack_full
 hung_task
+soft_lockup
 echo "### VM checks"
 oom_hit
 high_swap
