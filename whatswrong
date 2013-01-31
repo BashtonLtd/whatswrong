@@ -149,8 +149,8 @@ soft_lockup() {
 
 conntrack_full() {
   # Don't check if connection tracking module isn't loaded
-  if egrep -q "nf_conntrack " /proc/modules; then
-    if dmesg | grep -q "nf_conntrack: table full"; then
+  if egrep -q "(ip|nf)_conntrack " /proc/modules; then
+    if dmesg | egrep -q "(ip|nf)_conntrack: table full"; then
       bad "Connection tracking table overflows found"
     else
       ok "No connection tracking table overflows found"
